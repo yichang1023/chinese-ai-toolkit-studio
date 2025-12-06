@@ -545,7 +545,8 @@
             const chatEndRef = useRef(null);
 
             // UI State
-            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+           // 修改：只有螢幕夠寬時才預設開啟，手機預設關閉
+const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
             const [fabOpen, setFabOpen] = useState(false);
 
             // Data State
@@ -970,7 +971,8 @@
                                 </button>
                                 <div className="flex items-center gap-2">
                                     <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold text-xl">華</div>
-                                    <span className="text-xl font-bold tracking-tight text-slate-800">華語<span className="text-orange-500">AI</span>百寶箱
+                                    <span className="text-xl font-bold tracking-tight text-slate-800">{/* 修改：手機版隱藏 '百寶箱' 三個字，只顯示 '華語AI' */}
+華語<span className="text-orange-500">AI</span><span className="hidden md:inline">百寶箱</span>
 
 {/* 回首頁按鈕 (React寫法) */}
 <a href="index.html" className="flex items-center gap-2 mr-4 text-slate-600 hover:text-orange-500 font-bold no-underline">
@@ -1028,7 +1030,7 @@
                     </header>
 
                     {/* Main Layout */}
-                   
+                    
                    <div className="flex flex-1 overflow-hidden max-w-[1600px] mx-auto w-full">
                         {/* Sidebar */}
                         <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:w-0 lg:opacity-0'}`}>
@@ -1288,5 +1290,4 @@
         root.render(<ChineseLearningApp />);
     </script>
 </body>
-
 </html>
