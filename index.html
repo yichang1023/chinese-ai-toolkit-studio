@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>華語 AI 學習中心 | Chinese AI Study Hub</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,6 +12,16 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
+        /* 強制重置與寬度適應，解決 Google Sites iframe 問題 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: auto;
+            overflow-x: hidden; /* 防止橫向捲動導致縮放錯誤 */
+            -webkit-text-size-adjust: 100%; /* 防止手機自動調整字體大小 */
+        }
+
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-color: #f8fafc;
@@ -36,15 +46,15 @@
         }
     </style>
 </head>
-<body class="flex flex-col min-h-screen text-slate-800">
+<body class="flex flex-col min-h-screen text-slate-800 w-full">
 
     <!-- Navbar -->
-    <nav class="bg-white shadow-sm sticky top-0 z-50">
+    <nav class="bg-white shadow-sm sticky top-0 z-50 w-full">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-2">
-                    <i data-lucide="languages" class="text-red-600 w-8 h-8"></i>
-                    <span class="font-bold text-xl tracking-tight text-slate-900">華語 AI 學習中心</span>
+                    <i data-lucide="languages" class="text-red-600 w-8 h-8 flex-shrink-0"></i>
+                    <span class="font-bold text-xl tracking-tight text-slate-900 truncate">華語 AI 學習中心</span>
                 </div>
                 <div class="hidden md:flex space-x-8">
                     <!-- 使用 button 與 onclick 替代 a href 錨點，以適應 Google Sites -->
@@ -54,7 +64,7 @@
                 </div>
                 <!-- Mobile menu button placeholder (simple layout) -->
                 <div class="md:hidden">
-                    <button class="text-slate-500 hover:text-slate-700">
+                    <button class="text-slate-500 hover:text-slate-700 p-2">
                         <i data-lucide="menu"></i>
                     </button>
                 </div>
@@ -63,20 +73,20 @@
     </nav>
 
     <!-- Hero Section -->
-    <div class="bg-pattern relative overflow-hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
-            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
-                開啟您的 <span class="gradient-text">智慧華語</span> 學習之旅
+    <div class="bg-pattern relative overflow-hidden w-full">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-12 md:pt-20 md:pb-16 text-center">
+            <h1 class="text-3xl md:text-6xl font-extrabold tracking-tight mb-6">
+                開啟您的 <span class="gradient-text block md:inline">智慧華語</span> 學習之旅
             </h1>
-            <p class="mt-4 max-w-2xl mx-auto text-xl text-slate-500">
+            <p class="mt-4 max-w-2xl mx-auto text-lg md:text-xl text-slate-500 px-2">
                 整合四大 AI 智能輔助學習平台，從基礎發音到高階應用，<br class="hidden md:inline">為您提供全方位的學習體驗。
             </p>
-            <div class="mt-8 flex justify-center gap-4">
+            <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4 px-4">
                 <!-- 修改為 button 並綁定 JavaScript 滑動事件 -->
-                <button onclick="scrollToSection('platforms')" class="px-8 py-3 border border-transparent text-base font-medium rounded-full text-white bg-red-600 hover:bg-red-700 md:text-lg transition shadow-lg shadow-red-200 focus:outline-none">
+                <button onclick="scrollToSection('platforms')" class="w-full sm:w-auto px-8 py-3 border border-transparent text-base font-medium rounded-full text-white bg-red-600 hover:bg-red-700 md:text-lg transition shadow-lg shadow-red-200 focus:outline-none">
                     開始學習
                 </button>
-                <button onclick="scrollToSection('about')" class="px-8 py-3 border border-slate-300 text-base font-medium rounded-full text-slate-700 bg-white hover:bg-slate-50 md:text-lg transition focus:outline-none">
+                <button onclick="scrollToSection('about')" class="w-full sm:w-auto px-8 py-3 border border-slate-300 text-base font-medium rounded-full text-slate-700 bg-white hover:bg-slate-50 md:text-lg transition focus:outline-none">
                     了解更多
                 </button>
             </div>
@@ -84,14 +94,14 @@
     </div>
 
     <!-- Platform Grid Section -->
-    <div id="platforms" class="py-16 bg-white">
+    <div id="platforms" class="py-12 md:py-16 bg-white w-full">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold text-slate-900">選擇您的學習平台</h2>
-                <p class="mt-4 text-lg text-slate-500">針對不同需求設計的專屬學習環境</p>
+            <div class="text-center mb-8 md:mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-900">選擇您的學習平台</h2>
+                <p class="mt-4 text-base md:text-lg text-slate-500">針對不同需求設計的專屬學習環境</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                 
                 <!-- Platform 1 -->
                 <a href="https://sites.google.com/view/chineses-ai-tudy-no1/%E9%A6%96%E9%A0%81" target="_blank" class="group block">
@@ -162,8 +172,8 @@
     </div>
 
     <!-- Features / About Preview -->
-    <div id="about" class="bg-slate-50 py-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-12">
+    <div id="about" class="bg-slate-50 py-12 md:py-16 w-full">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-8 md:gap-12">
             <div class="w-full md:w-1/2">
                 <div class="relative bg-white p-2 rounded-2xl shadow-xl transform rotate-1 hover:rotate-0 transition duration-500">
                      <!-- Minimal Placeholder Graphic using CSS/SVG -->
@@ -176,7 +186,7 @@
                 </div>
             </div>
             <div class="w-full md:w-1/2">
-                <h2 class="text-3xl font-bold text-slate-900 mb-6">為什麼選擇我們的系統？</h2>
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-6">為什麼選擇我們的系統？</h2>
                 <div class="space-y-6">
                     <div class="flex gap-4">
                         <div class="flex-shrink-0">
@@ -217,11 +227,11 @@
     </div>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 text-slate-300 py-10 mt-auto">
+    <footer class="bg-slate-900 text-slate-300 py-10 mt-auto w-full">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="mb-4 md:mb-0">
-                    <div class="flex items-center gap-2 mb-2">
+                <div class="mb-4 md:mb-0 text-center md:text-left">
+                    <div class="flex items-center justify-center md:justify-start gap-2 mb-2">
                         <i data-lucide="languages" class="text-red-500 w-6 h-6"></i>
                         <span class="font-bold text-white text-lg">華語 AI 學習中心</span>
                     </div>
