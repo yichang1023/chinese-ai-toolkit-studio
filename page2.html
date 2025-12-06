@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>華語 AI 百寶箱 - Chinese Learning AI Toolbox</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #aaa; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import { 
+            Menu, X, Home, FileText, Repeat, MessageCircle, 
+            Settings, User, ChevronRight, Share, Download, 
+            Zap, BookOpen, BarChart2, Headphones, Sparkles,
+            Smile, Coffee, MapPin, ShoppingBag, Briefcase, 
+            Activity, Music, Gift, Heart, Grid, Code, AlertCircle,
+            Play, Pause, Mic, Image as ImageIcon, ArrowRight,
+            CheckCircle, XCircle, HelpCircle, Lightbulb, 
+            Send, Bot, Key, Save, Eye, EyeOff
+        } from 'https://esm.sh/lucide-react@0.263.1';
+
+        const { useState, useEffect, useRef } = React;
+
+        // --- Configuration Data ---
+        const THEMES = [
+            { id: 1, name: "日常生活", icon: <Smile size={18} />, scenarios: ["打招呼", "時間", "天氣", "買東西", "看醫生", "理髮", "找朋友"] },
+            { id: 2, name: "飲食文化", icon: <Coffee size={18} />, scenarios: ["點餐", "推薦美食", "吃火鍋", "包餃子", "食材介紹", "菜單詢問", "用餐禮儀"] },
+            { id: 3, name: "交通出行", icon: <MapPin size={18} />, scenarios: ["問路", "搭公車", "買票", "訂房", "過海關", "租車", "遲到道歉"] },
+            { id: 4, name: "購物消費", icon: <ShoppingBag size={18} />, scenarios: ["詢價", "折扣", "退貨", "線上購物", "電子支付", "試穿衣服", "贈禮"] },
+            { id: 5, name: "工作職場", icon: <Briefcase size={18} />, scenarios: ["面試", "自我介紹", "開會", "提案", "電話", "報告", "請假"] },
+            { id: 6, name: "醫療保健", icon: <Activity size={18} />, scenarios: ["掛號", "問診", "拿藥", "身體狀況", "運動建議", "預防保健", "心理諮詢"] },
+            { id: 7, name: "休閒娛樂", icon: <Music size={18} />, scenarios: ["看電影", "唱歌", "旅遊", "打球", "玩遊戲", "興趣介紹", "週末計畫"] },
+            { id: 8, name: "節慶活動", icon: <Gift size={18} />, scenarios: ["春節", "中秋", "端午", "聖誕", "生日", "婚禮", "跨年"] },
+            { id: 9, name: "社交互動", icon: <Heart size={18} />, scenarios: ["聊天", "邀約", "送禮", "讚美", "拒絕", "道歉", "感謝"] },
+            { id: 10, name: "其他自訂", icon: <Grid size={18} />, scenarios: ["自訂情境"] },
+        ];
+
+        const SCENARIO_IMAGES = [
+            { id: 'night_market', emoji: '🍜', label: '夜市情境 (殺價)' },
+            { id: 'mrt_station', emoji: '🚇', label: '捷運站 (問路)' },
+            { id: 'hospital_counter', emoji: '🏥', label: '醫院櫃檯 (掛號)' },
+            { id: 'office_meeting', emoji: '💼', label: '辦公室會議 (提案)' },
+            { id: 'immigration', emoji: '🛂', label: '移民署辦理居留證' },
+            { id: 'bank_counter', emoji: '🏦', label: '銀行櫃檯開戶' },
+            { id: 'convenience_store', emoji: '📦', label: '便利商店問包裹' },
+            { id: 'school_admin', emoji: '🏫', label: '校園行政處詢問學費' },
+        ];
+
+        const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2", "C6 (精通)"];
+        const MODES = [
+            { id: "scenario", name: "情境敘述句型", desc: "描述當下發生的情況" },
+            { id: "experience", name: "經驗分享句型", desc: "講述過去的經驗與感受" },
+            { id: "advice", name: "實用建議句型", desc: "提供建議或解決方案" },
+            { id: "analysis", name: "深度分析句型", desc: "針對現象進行邏輯分析" }
+        ];
+
+        const REWRITE_OPTIONS = [
+            { id: "simplify", name: "降級 (更簡單)", desc: "適合初學者，使用基礎詞彙" },
+            { id: "upgrade", name: "升級 (更深奧)", desc: "增加成語與複雜句構" },
+            { id: "formal", name: "更正式 (商務/學術)", desc: "適合職場與書面報告" },
+            { id: "casual", name: "更口語 (生活化)", desc: "像朋友聊天一樣自然" }
+        ];
+
+        const QA_TYPES = [
+            { id: "reading", name: "閱讀測驗 (互動式)", icon: <BookOpen size={16}/> },
+            { id: "discussion", name: "討論議題 (含引導)", icon: <MessageCircle size={16}/> },
+            { id: "vocab", name: "重點單字 (卡片)", icon: <Zap size={16}/> }
+        ];
+
+        // --- Utility Functions ---
+        const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+        // --- Prompt Generators (Unchanged) ---
+        const generatePrompt = (theme, scenario, level, mode) => {
+            return `
+# Role
+你是一位頂尖的「華語教學專家」兼「創意寫作導師」。
+
+# Task
+請根據以下變數，創作一篇**極具生活感**、**口語自然**且符合語言等級的華語學習文本。
+
+# Input Variables
+- 主題: ${theme}
+- 情境: ${scenario}
+- 語言等級: ${level}
+- 句型模式: ${mode}
+
+# Style Guidelines
+1. **拒絕僵化**: 嚴禁使用「機器人般」的語氣。文本必須流暢、有彈性。
+2. **生活化細節**: 加入具體的感官細節，讓場景「活」起來。
+3. **語氣詞運用**: 根據等級適當加入語氣詞（如：吧、呢、喔），增加自然度。
+
+# Output Format (JSON Only)
+{
+  "content": "生成的文本內容...",
+  "stats": {
+    "words": 數字,
+    "sentences": 數字,
+    "vocabLevel": "評估等級",
+    "reasoning": "簡短說明"
+  }
+}
+            `.trim();
+        };
+
+        const generateRewritePrompt = (originalText, rewriteType) => {
+            return `
+# Role
+你是一位專業的華語編輯與語言學家。
+
+# Task
+請將以下文本進行「${rewriteType}」改寫，並提供改寫分析。
+
+# Original Text
+"${originalText}"
+
+# Rewrite Rules (${rewriteType})
+- 若為「降級」: 使用更簡單的詞彙 (A1/A2)，縮短句子。
+- 若為「升級」: 加入成語、優美修辭與複雜句型。
+- 若為「更正式」: 使用書面語，避免口語贅字。
+- 若為「更口語」: 加入台灣生活用語、語氣詞，使其像真人對話。
+
+# Output Format (JSON Only)
+{
+  "content": "改寫後的完整文本...",
+  "analysis": {
+    "summary": "一段話總結這次改寫的主要策略",
+    "key_changes": [
+      { "type": "詞彙替換", "original": "舊詞", "new": "新詞", "reason": "更符合目標難度" },
+      { "type": "句型調整", "desc": "簡短說明句構變化" }
+    ]
+  }
+}
+            `.trim();
+        };
+
+        const generateQAPrompt = (text, type) => {
+            return `
+# Role
+你是一位資深華語教師。
+
+# Task
+請根據以下文本，設計高品質的「${type}」教學內容。
+
+# Text Context
+"${text}"
+
+# Requirements
+- 若為「閱讀測驗」: 出 3 題選擇題，每題需附正確答案與**詳細解析**。
+- 若為「討論議題」: 出 2 題開放式問題，並提供**參考回答方向**（給老師看的引導）。
+- 若為「重點單字」: 列出 5 個難詞，附拼音、解釋、詞性與**例句**。
+
+# Output Format (JSON Only)
+{
+  "items": [
+    { "question": "題目", "options": ["A", "B", "C"], "correctIndex": 0, "explanation": "為什麼選這個答案" },
+    { "question": "討論題目", "guide": "老師可以引導學生思考的方向..." },
+    { "word": "單字", "pinyin": "pīn yīn", "partOfSpeech": "動詞", "definition": "解釋", "example": "例句" }
+  ]
+}
+            `.trim();
+        };
+
+        const generateTutorPrompt = (text, query) => {
+            return `
+# Role
+你是一位親切、有耐心且知識淵博的「AI 華語助教」。你的目標是幫助學生理解文本、學習語法，並提供鼓勵。
+
+# Context (Current Text)
+"${text}"
+
+# User Query
+"${query}"
+
+# Guidelines
+1. **直接回答**: 針對使用者的問題直接回答，不要繞圈子。
+2. **結合文本**: 盡量引用上方的 Context 文本來舉例。
+3. **教學語氣**: 使用鼓勵性的語氣 (例如：「這個問題很棒！」、「你觀察得很仔細！」)。
+4. **繁體中文**: 請使用台灣繁體中文回答。
+
+# Output
+請直接輸出回答內容 (Plain Text)，可以適當使用 Markdown (如粗體) 來強調重點。
+`.trim();
+        };
+
+        // --- API & Mock Functions (Unchanged) ---
+        const callGeminiAPI = async (prompt, userKey) => {
+            if (!userKey) return null;
+            try {
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userKey}`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: { responseMimeType: "application/json" }
+                        }),
+                    }
+                );
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                const data = await response.json();
+                return JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text);
+            } catch (error) {
+                console.error("Gemini API call failed:", error);
+                return null;
+            }
+        };
+
+        const callGeminiChatAPI = async (prompt, userKey) => {
+            if (!userKey) return null;
+            try {
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userKey}`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        }),
+                    }
+                );
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text;
+            } catch (error) {
+                console.error("Gemini Chat API failed:", error);
+                return null;
+            }
+        };
+
+        // --- Mock Data (Enhanced Multimodal) ---
+        
+        // Mock data mapping for Image-to-Text
+        const MOCK_IMAGE_RESPONSES = {
+            '夜市情境 (殺價)': {
+                title: '夜市殺價與人際互動',
+                lesson: '在台灣夜市，殺價是很常見的！不過通常只能從小攤販開始，而且要記得使用「請問可以便宜一點嗎？」、「算我兩個，拜託啦！」等客氣語氣。如果對方是連鎖店，就不要嘗試殺價囉。',
+                keywords: ['殺價', '夜市', '多少錢', '便宜', '攤販'],
+            },
+            '捷運站 (問路)': {
+                title: '捷運站問路與交通指引',
+                lesson: '在捷運站詢問路線時，可以說「請問，我要去台北車站，請問在哪裡轉車比較快？」或「請問，這班車是往淡水的嗎？」。記得保持禮貌，並確認目的地站名。',
+                keywords: ['捷運', '轉車', '路線', '站牌', '問路'],
+            },
+            '醫院櫃檯 (掛號)': {
+                title: '醫院掛號和初次就診流程',
+                lesson: '第一次來醫院，請先到櫃檯掛號。您可以說：「我要掛號，請問要看皮膚科。」或者「我沒有健保卡，請問可以自費看診嗎？」醫院會請您填寫基本資料。',
+                keywords: ['掛號', '就診', '健保卡', '自費', '櫃檯'],
+            },
+            '辦公室會議 (提案)': {
+                title: '辦公室提案與簡報技巧',
+                lesson: '在辦公室會議中提出新方案時，應使用正式語氣：「針對這項專案，我建議採用新策略。以下是我的提案簡報，請各位指教。」語氣要自信且專業。',
+                keywords: ['提案', '專案', '簡報', '策略', '指教'],
+            },
+            '移民署辦理居留證': {
+                title: '移民署居留證辦理流程',
+                lesson: '在移民署辦理居留證需要耐心等候。您可以詢問：「請問辦理居留證需要帶哪些文件？我今天可以拿到號碼牌嗎？」記得檢查所有文件的有效期限。',
+                keywords: ['居留證', '辦理', '文件', '號碼牌', '期限'],
+            },
+            '銀行櫃檯開戶': {
+                title: '銀行開戶流程與對話',
+                lesson: '到銀行開戶時，可以直接對櫃檯人員說：「你好，我想要開一個活期儲蓄帳戶。」銀行人員可能會問您開戶的用途和是否需要申請提款卡。',
+                keywords: ['開戶', '帳戶', '櫃檯', '提款卡', '用途'],
+            },
+            '便利商店問包裹': {
+                title: '便利商店包裹領取與詢問',
+                lesson: '在便利商店領取包裹時，您可以詢問：「請問有我的包裹嗎？我的名字是王小明。」店員通常會要求您出示身份證件，然後報上電話末三碼。',
+                keywords: ['包裹', '領取', '身份證件', '店員', '末三碼'],
+            },
+            '校園行政處詢問學費': {
+                title: '校園行政處詢問學費與註冊',
+                lesson: '學生到行政處詢問學費時，語氣應該禮貌：「老師您好，請問這個學期的學費繳費期限是什麼時候？我可以在線上繳費嗎？」確保繳費資訊的正確性。',
+                keywords: ['學費', '繳費', '行政處', '期限', '註冊'],
+            },
+        };
+        
+        const generateMockContent = (theme, scenario, level, mode) => ({
+            content: `(體驗版模式 - ${level}) 關於「${theme}-${scenario}」，如果是 ${level} 等級，我們會這樣描述：這是一個非常典型的場景。在台灣，人們通常會非常有禮貌地進行互動。例如，當你需要幫助時，可以先說「不好意思」。(目前為體驗版，點擊右上方「設定」可切換為正式版，體驗真實 AI 功能。)`,
+            stats: {
+                words: Math.floor(Math.random() * 100) + 50,
+                sentences: Math.floor(Math.random() * 5) + 3,
+                time: (Math.random() * 2 + 0.5).toFixed(1),
+                vocabLevel: level,
+                reasoning: "此為體驗版模擬數據，若要使用無限、即時生成的內容，請升級到正式版。"
+            }
+        });
+
+        const generateMockRewrite = (original, type) => ({
+            content: `(體驗版改寫 - ${type}) 這是針對「${type}」風格進行調整後的文字... (目前為體驗版，點擊右上方「設定」可切換為正式版，體驗真實 AI 改寫功能。)`,
+            analysis: {
+                summary: `針對 ${type} 需求，主要調整了詞彙難度與句型長度。`,
+                key_changes: [
+                    { type: "版本限制", desc: "目前使用體驗版模擬數據，請在設定頁填入 Key 升級正式版" }
+                ]
+            }
+        });
+
+        const generateMockQA = (type) => ({
+            items: type === "reading" ? [
+                { question: "這是一份模擬試題嗎？", options: ["是的", "不是", "不確定"], correctIndex: 0, explanation: "目前為體驗版模式。" },
+                { question: "這篇文章適合什麼樣的讀者？", options: ["華語初學者", "語言學家", "數學家"], correctIndex: 0, explanation: "文章內容涉及基礎社交禮儀，適合初學者閱讀。" }
+            ] : type === "discussion" ? [
+                { question: "請確認您的 API Key 是否正確設定？", guide: "若無 Key，系統僅能提供此模擬範本。" }
+            ] : [
+                { word: "模擬", pinyin: "mó nǐ", partOfSpeech: "動詞", definition: "模仿實際情況", example: "這是模擬的數據。" },
+                { word: "典型", pinyin: "diǎn xíng", partOfSpeech: "形容詞", definition: "具有代表性的", example: "這是一個典型的台灣夜市小吃。" }
+            ]
+        });
+
+        const generateMockTutorResponse = (query) => {
+            return `(體驗版助教回應) 針對你問的「${query}」... (目前為體驗版，回答內容受限。請升級到正式版以獲得真實 AI 輔導。)`;
+        };
+        
+        const generateMockImageToText = (scenarioLabel) => {
+            const level = getRandom(LEVELS.filter(l => l !== 'C6 (精通)'));
+            const data = MOCK_IMAGE_RESPONSES[scenarioLabel] || MOCK_IMAGE_RESPONSES['捷運站 (問路)']; // Default fallback
+            
+            return {
+                title: data.title,
+                lesson: `${data.lesson} (此為 ${level} 級範本。請注意：內容貼近生活，句型結構符合該等級要求。)`,
+                keywords: data.keywords,
+                vocabLevel: level,
+                reasoning: `此為體驗版視覺學習模擬，點擊旁邊的語音播放可以聽聽看！`
+            };
+        };
+
+
+        // --- Components ---
+        const SettingsModal = ({ isOpen, onClose, apiKey, setApiKey, currentMode }) => {
+            const [inputKey, setInputKey] = useState(apiKey);
+            const [showKey, setShowKey] = useState(false);
+            const [isSaving, setIsSaving] = useState(false);
+
+            useEffect(() => { setInputKey(apiKey); }, [apiKey]);
+            
+            const handleSave = () => { 
+                setIsSaving(true);
+                // 模擬儲存時間
+                setTimeout(() => {
+                    setApiKey(inputKey); 
+                    localStorage.setItem('gemini_api_key', inputKey); 
+                    setIsSaving(false);
+                    onClose(); 
+                }, 500);
+            };
+
+            const handleClear = () => {
+                setApiKey('');
+                localStorage.removeItem('gemini_api_key');
+                setInputKey('');
+            }
+
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-100">
+                        <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                            <div className="flex items-center space-x-2 text-gray-800"><div className="p-2 bg-purple-100 rounded-lg text-purple-600"><Settings size={20}/></div><h2 className="text-xl font-bold">版本與 API 設定</h2></div>
+                            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition"><X size={24}/></button>
+                        </div>
+
+                        {/* Current Mode Indicator in Modal */}
+                         <div className={`p-3 rounded-lg text-sm font-semibold mb-4 flex items-center justify-between ${currentMode === 'Official' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'}`}>
+                            <span className="flex items-center">
+                                {currentMode === 'Official' ? <CheckCircle size={18} className="mr-2"/> : <AlertCircle size={18} className="mr-2"/>}
+                                目前模式：{currentMode === 'Official' ? '正式版 (完整功能)' : '體驗版 (模擬模式)'}
+                            </span>
+                            {currentMode === 'Official' && <button onClick={handleClear} className="text-xs font-normal text-red-500 hover:underline">切換為體驗版</button>}
+                         </div>
+
+                        <div className="space-y-4 mb-6">
+                            <div className="border-t pt-4">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Google Gemini API Key (正式版)</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><Key size={18} /></div>
+                                    <input type={showKey ? "text" : "password"} value={inputKey} onChange={(e) => setInputKey(e.target.value)} placeholder="AIzaSy..." className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-400 transition"/>
+                                    <button onClick={() => setShowKey(!showKey)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">{showKey ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    填入有效的 Key 即可自動升級為正式版，體驗真實 AI 生成內容。
+                                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline ml-1">取得 API Key</a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end space-x-3">
+                            <button onClick={onClose} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg transition" disabled={isSaving}>取消</button>
+                            <button onClick={handleSave} className="px-6 py-2 bg-[#006699] text-white font-bold rounded-lg hover:bg-blue-700 transition flex items-center shadow-md disabled:opacity-50" disabled={isSaving || !inputKey.trim()}>
+                                {isSaving ? <Repeat size={18} className="mr-2 animate-spin"/> : <Save size={18} className="mr-2"/>} 
+                                {isSaving ? '儲存中...' : '儲存 Key & 升級正式版'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
+        // Mode Indicator Banner Component
+        const ModeIndicatorBanner = ({ currentMode, setActiveModule }) => {
+            const isOfficial = currentMode === 'Official';
+            const bgColor = isOfficial ? 'bg-green-600' : 'bg-yellow-600';
+            const statusText = isOfficial ? '正式版 (AI 實時生成)' : '體驗版 (高擬真模擬)';
+            const statusIcon = isOfficial ? <CheckCircle size={18} className="mr-2"/> : <AlertCircle size={18} className="mr-2"/>;
+
+            return (
+                <div className={`w-full ${bgColor} text-white p-3 text-sm font-medium flex items-center justify-between shadow-lg`}>
+                    <span className="flex items-center">
+                        {statusIcon} {statusText}
+                    </span>
+                    {!isOfficial && (
+                        <button onClick={() => setActiveModule('generate')} className="text-xs bg-white text-yellow-700 px-3 py-1 rounded-full hover:bg-gray-100 transition">
+                            點擊這裡了解正式版
+                        </button>
+                    )}
+                </div>
+            );
+        };
+        // End of new Components
+
+        // --- Module Components ---
+        
+        const GenerateModule = ({ levels, modes, selectedLevel, setSelectedLevel, selectedMode, setSelectedMode, handleGenerate, isGenerating, generatedText, setActiveModule }) => (
+            <div className="space-y-6 animate-fade-in">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 pb-4">
+                        <div className="p-2 bg-orange-100 rounded-lg text-orange-500"><FileText size={24} /></div>
+                        <div><h2 className="text-xl font-bold text-gray-800">智能文本生成</h2><p className="text-xs text-gray-500">AI Powered Generation</p></div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">語言等級</label>
+                            <div className="flex flex-wrap gap-2">
+                                {levels.map(l => (
+                                    <button key={l} onClick={() => setSelectedLevel(l)} className={`px-3 py-1.5 text-sm rounded-md border transition ${selectedLevel === l ? 'bg-[#006699] text-white' : 'hover:border-[#006699]'}`}>{l}</button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">生成模式</label>
+                            <div className="space-y-2">
+                                {modes.map(m => (
+                                    <button key={m.id} onClick={() => setSelectedMode(m)} className={`w-full text-left px-3 py-2 text-sm rounded-md border transition flex justify-between ${selectedMode.id === m.id ? 'bg-orange-50 border-orange-300 text-orange-700' : 'hover:border-orange-300'}`}>
+                                        <span>{m.name}</span><span className="text-xs opacity-70">{m.desc}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mt-8 flex justify-end space-x-3 border-t border-gray-100 pt-4">
+                        <button onClick={handleGenerate} disabled={isGenerating} className="px-6 py-2 bg-[#FFB347] text-white font-bold rounded-lg shadow-md hover:bg-[#FF8C00] transition flex items-center space-x-2 disabled:opacity-50">
+                            {isGenerating ? <Repeat className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                            <span>{isGenerating ? 'AI 思考中...' : '開始生成'}</span>
+                        </button>
+                    </div>
+                </div>
+                {generatedText && (
+                    <div className="bg-white rounded-xl shadow-lg border-t-4 border-[#FFB347] overflow-hidden">
+                        <div className="bg-gray-50 px-6 py-3 border-b flex justify-between items-center">
+                            <span className="font-bold text-gray-600">生成結果</span>
+                            <div className="flex space-x-2">
+                                <button className="text-xs flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition" onClick={() => setActiveModule("rewrite")}><Repeat size={12} className="mr-1"/> 前往改寫</button>
+                                <button className="text-xs flex items-center bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition" onClick={() => setActiveModule("qa")}><MessageCircle size={12} className="mr-1"/> 延伸問答</button>
+                                <button className="text-xs flex items-center bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200 transition" onClick={() => setActiveModule("tutor")}><Zap size={12} className="mr-1"/> 詢問助教</button>
+                            </div>
+                        </div>
+                        <div className="p-6 text-lg text-gray-800 leading-loose font-serif">
+                            {generatedText.content}
+                            {generatedText.stats?.reasoning && <div className="mt-4 p-3 bg-blue-50 text-sm text-blue-800 rounded flex items-start"><AlertCircle size={16} className="mr-2 mt-0.5 flex-shrink-0" />{generatedText.stats.reasoning}</div>}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+
+        const RewriteModule = ({ generatedText, isGenerating, handleRewrite, rewriteResult, rewriteOptions }) => (
+            <div className="space-y-6 animate-fade-in">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 pb-4">
+                        <div className="p-2 bg-blue-100 rounded-lg text-blue-500"><Repeat size={24} /></div>
+                        <div><h2 className="text-xl font-bold text-gray-800">文本改寫實驗室</h2><p className="text-xs text-gray-500">Smart Text Transformation</p></div>
+                    </div>
+                    {!generatedText ? <div className="text-center py-10 text-gray-400">請先在「文本生成」區產生內容。</div> : (
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            <div className="lg:col-span-4 space-y-2">
+                                <label className="text-sm font-bold text-gray-600">原始文本</label>
+                                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-gray-500 h-96 overflow-y-auto text-sm leading-relaxed">{generatedText.content}</div>
+                            </div>
+                            <div className="lg:col-span-2 flex flex-col space-y-3 justify-center">
+                                <div className="text-xs font-bold text-center text-gray-400 mb-2">選擇改寫策略</div>
+                                {rewriteOptions.map(opt => (
+                                    <button key={opt.id} onClick={() => handleRewrite(opt)} disabled={isGenerating} className="p-3 text-center border rounded-xl hover:border-blue-400 hover:bg-blue-50 transition shadow-sm group">
+                                        <div className="font-bold text-sm text-gray-800 group-hover:text-blue-600">{opt.name}</div>
+                                        <div className="text-[10px] text-gray-400 mt-1">{opt.desc}</div>
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="lg:col-span-6 space-y-2">
+                                <label className="text-sm font-bold text-gray-600">改寫結果與 AI 分析</label>
+                                <div className="bg-white rounded-lg border border-blue-200 h-96 overflow-y-auto flex flex-col relative">
+                                    {isGenerating && <div className="absolute inset-0 bg-white/90 z-10 flex flex-col items-center justify-center text-blue-600"><Repeat className="animate-spin mb-3" size={32}/><span className="font-bold">AI 正在分析...</span></div>}
+                                    {rewriteResult ? (
+                                        <>
+                                            <div className="p-5 text-gray-800 leading-loose text-base flex-1 font-serif bg-blue-50/30">{rewriteResult.content}</div>
+                                            <div className="bg-blue-50 border-t border-blue-100 p-4 text-sm">
+                                                <div className="flex items-center text-blue-800 font-bold mb-2"><Lightbulb size={16} className="mr-2"/> AI 改寫分析</div>
+                                                <p className="text-gray-600 text-xs mb-3">{rewriteResult.analysis?.summary}</p>
+                                                <div className="space-y-2">
+                                                    {rewriteResult.analysis?.key_changes?.map((change, i) => (
+                                                      <div key={i} className="flex items-start bg-white p-2 rounded border border-blue-100 shadow-sm">
+                                                        <span className="bg-blue-100 text-blue-600 text-[10px] px-1.5 py-0.5 rounded font-bold mr-2 mt-0.5 whitespace-nowrap">{change.type || "修改"}</span>
+                                                        <span className="text-xs text-gray-600">{change.original && change.new ? <span>將 <span className="line-through text-gray-400">{change.original}</span> 改為 <span className="text-green-600 font-medium">{change.new}</span> ({change.reason})</span> : change.desc}</span>
+                                                      </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">請選擇左側改寫策略</div>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+
+        const QAModule = ({ generatedText, isGenerating, qaTypes, handleQA, qaResult, userAnswers, handleAnswerClick, showExplanation }) => (
+            <div className="space-y-6 animate-fade-in">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 pb-4">
+                        <div className="p-2 bg-green-100 rounded-lg text-green-500"><MessageCircle size={24} /></div>
+                        <div><h2 className="text-xl font-bold text-gray-800">智慧問答延伸</h2><p className="text-xs text-gray-500">Interactive Quiz</p></div>
+                    </div>
+                    {!generatedText ? <div className="text-center py-10 text-gray-400">請先生成文本。</div> : (
+                        <div>
+                            <div className="flex space-x-4 mb-8">
+                                {qaTypes.map(type => (
+                                    <button key={type.id} onClick={() => handleQA(type)} disabled={isGenerating} className={`flex-1 py-4 border rounded-xl transition flex flex-col items-center justify-center space-y-2 ${qaResult?.type === type.id ? 'bg-green-50 border-green-500' : 'border-gray-200 hover:bg-green-50'}`}>
+                                        <div className="text-green-600">{type.icon}</div><span className="font-bold text-sm text-gray-600">{type.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            {isGenerating && <div className="text-center py-12 bg-gray-50 rounded-xl"><Sparkles className="animate-spin mx-auto text-green-500 mb-3" size={32}/><div className="text-gray-500 font-medium">AI 正在出題中...</div></div>}
+                            {qaResult && !isGenerating && (
+                                <div className="animate-fade-in space-y-6">
+                                    {qaResult.type === 'reading' && qaResult.items?.map((item, qIdx) => (
+                                        <div key={qIdx} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                                            <div className="flex items-start mb-4"><span className="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-1 rounded-lg mr-3 mt-0.5">Q{qIdx+1}</span><h3 className="font-bold text-gray-800 text-lg">{item.question}</h3></div>
+                                            <div className="space-y-2 ml-10">
+                                                {item.options?.map((opt, oIdx) => {
+                                                    const isSelected = userAnswers[qIdx] === oIdx;
+                                                    const isCorrect = item.correctIndex === oIdx;
+                                                    const showResult = showExplanation[qIdx];
+                                                    let btnClass = "border-gray-200 hover:bg-gray-50";
+                                                    if (showResult) { if (isCorrect) btnClass = "bg-green-50 border-green-500 text-green-800"; else if (isSelected) btnClass = "bg-red-50 border-red-300 text-red-800"; }
+                                                    return <button key={oIdx} onClick={() => handleAnswerClick(qIdx, oIdx)} disabled={showResult} className={`w-full text-left p-3 rounded-lg border flex items-center justify-between transition ${btnClass}`}><span>{opt}</span>{showResult && isCorrect && <CheckCircle size={18} className="text-green-600"/>}{showResult && isSelected && !isCorrect && <XCircle size={18} className="text-red-500"/>}</button>;
+                                                })}
+                                            </div>
+                                            {showExplanation[qIdx] && <div className="ml-10 mt-4 p-4 bg-gray-50 rounded-lg text-sm text-gray-600 border border-gray-100 flex items-start"><Lightbulb size={16} className="mr-2 text-yellow-500"/><div><span className="font-bold">解析：</span> {item.explanation}</div></div>}
+                                        </div>
+                                    ))}
+                                    {qaResult.type === 'discussion' && qaResult.items?.map((item, idx) => (
+                                        <div key={idx} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                            <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-green-50/50 to-white">
+                                                <h3 className="font-bold text-gray-800 flex items-start"><MessageCircle size={18} className="mr-2 text-green-500 mt-1"/> {item.question}</h3>
+                                            </div>
+                                            <div className="p-5 bg-white">
+                                                <div className="text-sm text-gray-500 font-bold mb-2 uppercase tracking-wide text-xs">AI Teacher's Guide</div>
+                                                <div className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg text-sm border-l-4 border-green-400">{item.guide}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {qaResult.type === 'vocab' && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {qaResult.items?.map((item, idx) => (
+                                                <div key={idx} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition group">
+                                                    <div className="flex justify-between items-start mb-2"><h3 className="text-xl font-bold text-gray-800">{item.word}</h3><span className="bg-gray-100 text-gray-500 text-[10px] px-2 py-1 rounded-full">{item.partOfSpeech}</span></div>
+                                                    <div className="text-green-600 font-mono text-sm mb-3">{item.pinyin}</div>
+                                                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">{item.definition}</p>
+                                                    <div className="pt-3 border-t border-gray-100"><p className="text-xs text-gray-400 mb-1">例句：</p><p className="text-sm text-gray-700 italic">"{item.example}"</p></div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+
+        const TutorModule = ({ chatHistory, tutorInput, setTutorInput, handleTutorSend, isGenerating, chatEndRef, generatedText, setActiveModule, handleQuickQuestion }) => (
+            <div className="space-y-6 animate-fade-in h-full flex flex-col">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col flex-1">
+                    <div className="flex items-center space-x-3 mb-4 border-b border-gray-100 pb-4">
+                        <div className="p-2 bg-purple-100 rounded-lg text-purple-500"><Zap size={24} /></div>
+                        <div><h2 className="text-xl font-bold text-gray-800">AI 智能助教</h2></div>
+                    </div>
+                    {generatedText && (
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4 text-xs text-gray-600 flex justify-between items-center group">
+                            <div className="truncate flex-1 mr-4"><span className="font-bold text-gray-700 mr-2">當前文本:</span> "{generatedText.content.substring(0, 50)}..."</div>
+                            <button className="text-[#006699] hover:underline whitespace-nowrap" onClick={() => setActiveModule('generate')}>查看全文</button>
+                        </div>
+                    )}
+                    <div className="flex-1 overflow-y-auto mb-4 space-y-4 pr-2 custom-scrollbar">
+                        {chatHistory.map((msg, idx) => (
+                            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                {msg.role === 'ai' && <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-2 text-purple-600 flex-shrink-0"><Bot size={18}/></div>}
+                                <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm text-sm leading-relaxed ${msg.role === 'user' ? 'bg-[#006699] text-white rounded-tr-none' : 'bg-gray-50 border border-gray-200 text-gray-800 rounded-tl-none'}`}>{msg.content}</div>
+                            </div>
+                        ))}
+                        <div ref={chatEndRef} />
+                    </div>
+                    {generatedText && (
+                        <div className="flex space-x-2 overflow-x-auto pb-2 mb-2">
+                            {["這段文字的重點是什麼？", "請解釋文中的難詞", "給我一些相關的例句", "這段話適合什麼場合說？"].map((q, i) => (
+                            <button key={i} onClick={() => handleQuickQuestion(q)} className="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full hover:bg-purple-100 border border-purple-100 whitespace-nowrap transition">{q}</button>
+                            ))}
+                        </div>
+                    )}
+                    <div className="flex items-center space-x-2 border-t border-gray-100 pt-3">
+                        <input type="text" value={tutorInput} onChange={(e) => setTutorInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleTutorSend()} placeholder="輸入你的問題..." className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"/>
+                        <button onClick={handleTutorSend} disabled={!tutorInput.trim() || isGenerating} className="w-10 h-10 bg-[#006699] text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition disabled:opacity-50"><Send size={18}/></button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const MultimodalModule = ({ generatedText, isGenerating, isPlaying, setIsPlaying, handleImageToText, imageToTextResult, scenarioImages }) => (
+            <div className="space-y-6 animate-fade-in">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center space-x-3 mb-6 border-b border-gray-100 pb-4">
+                        <div className="p-2 bg-purple-100 rounded-lg text-purple-500"><Headphones size={24} /></div>
+                        <div><h2 className="text-xl font-bold text-gray-800">多模態學習中心</h2><p className="text-xs text-gray-500">Visual, Audio & Image-to-Text</p></div>
+                    </div>
+
+                    <h3 className="font-bold text-gray-700 mb-3 flex items-center"><ImageIcon size={18} className="mr-2"/> 情境圖片學習 (Image-to-Text)</h3>
+                    
+                    {/* Scenario Grid */}
+                    <div className="grid grid-cols-4 sm:grid-cols-8 gap-3 mb-6">
+                        {scenarioImages.map((scenario) => (
+                            <button 
+                                key={scenario.id} 
+                                onClick={() => handleImageToText(scenario)} 
+                                disabled={isGenerating}
+                                title={scenario.label}
+                                className="flex flex-col items-center justify-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition h-24 disabled:opacity-50 disabled:cursor-wait"
+                            >
+                                <span className="text-2xl mb-1">{scenario.emoji}</span>
+                                <span className="text-[10px] text-center text-gray-600 leading-tight">{scenario.label}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {isGenerating && <div className="text-center py-6 text-purple-600 flex justify-center items-center"><Repeat className="animate-spin mr-2"/> AI 視覺分析與生成中...</div>}
+
+                    {/* Image-to-Text Result Area */}
+                    {imageToTextResult && (
+                        <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 mb-8 animate-fade-in">
+                            <h4 className="text-lg font-bold text-purple-800 mb-2">{imageToTextResult.title}</h4>
+                            <p className="text-gray-700 text-sm leading-relaxed mb-3">{imageToTextResult.lesson}</p>
+                            <div className="text-xs text-gray-600">
+                                **關鍵詞彙:** {imageToTextResult.keywords?.join('、')}
+                                <span className="ml-4 text-purple-600">({imageToTextResult.vocabLevel} 級)</span>
+                            </div>
+                        </div>
+                    )}
+                   
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-100 pt-6">
+                        {/* Audio Part */}
+                        <div className="flex flex-col justify-between">
+                            <div>
+                                <h3 className="font-bold text-gray-700 mb-3 flex items-center"><Headphones size={18} className="mr-2"/> AI 語音導讀</h3>
+                                <div className="bg-gray-800 rounded-xl p-6 text-white shadow-lg relative overflow-hidden">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <div className="text-lg font-bold">{(imageToTextResult?.title || generatedText?.stats?.vocabLevel) ? (imageToTextResult?.title || '文本語音') : '請先生成內容'}</div>
+                                            <div className="text-xs text-gray-400">AI Teacher Voice • {imageToTextResult?.vocabLevel || generatedText?.stats?.vocabLevel || 'B1'}</div>
+                                        </div>
+                                        <Activity className="text-green-400 animate-pulse"/>
+                                    </div>
+                                    
+                                    <div className="flex justify-center space-x-6 items-center">
+                                        <button onClick={() => setIsPlaying(!isPlaying)} className="w-12 h-12 bg-white text-gray-900 rounded-full flex items-center justify-center hover:scale-105 transition">
+                                            {isPlaying ? <Pause size={24} fill="currentColor"/> : <Play size={24} fill="currentColor" className="ml-1"/>}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-6">
+                                <h3 className="font-bold text-gray-700 mb-3 flex items-center"><Mic size={18} className="mr-2"/> 口說跟讀練習</h3>
+                                <button className="w-full py-3 border-2 border-dashed border-purple-300 rounded-xl text-purple-600 font-bold hover:bg-purple-50 transition flex items-center justify-center">
+                                    <Mic size={20} className="mr-2"/> 點擊開始錄音
+                                </button>
+                            </div>
+                        </div>
+                        {/* Visual Part */}
+                        <div>
+                            <h3 className="font-bold text-gray-700 mb-3 flex items-center"><ImageIcon size={18} className="mr-2"/> 情境圖像預覽</h3>
+                            <div className="aspect-video bg-gray-100 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 relative overflow-hidden group cursor-pointer">
+                                <div className="absolute inset-0 bg-gradient-to-br from-orange-100 to-blue-100 opacity-50"></div>
+                                <div className="text-center z-10 p-4">
+                                    <ImageIcon size={48} className="mx-auto text-gray-400 mb-2 group-hover:scale-110 transition"/>
+                                    <p className="text-sm text-gray-500 font-medium">圖像生成需正式版權重，此為圖像預覽區。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+
+        const App = () => {
+            const [apiKey, setApiKey] = useState('');
+            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            const [currentPage, setCurrentPage] = useState("home"); 
+            const [activeModule, setActiveModule] = useState("generate"); 
+            const [selectedTheme, setSelectedTheme] = useState(THEMES[0]);
+            const [selectedScenario, setSelectedScenario] = useState(THEMES[0].scenarios[0]);
+            const [selectedLevel, setSelectedLevel] = useState("B1");
+            const [selectedMode, setSelectedMode] = useState(MODES[0]);
+            const [generatedText, setGeneratedText] = useState(null); 
+            const [rewriteResult, setRewriteResult] = useState(null);
+            const [qaResult, setQaResult] = useState(null);
+            const [userAnswers, setUserAnswers] = useState({}); 
+            const [showExplanation, setShowExplanation] = useState({});
+            const [chatHistory, setChatHistory] = useState([{ role: 'ai', content: '你好！我是你的 AI 助教。生成文本後，有任何問題都可以問我喔！' }]);
+            const [tutorInput, setTutorInput] = useState("");
+            const [isGenerating, setIsGenerating] = useState(false);
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+            const [isPlaying, setIsPlaying] = useState(false); 
+            const [imageToTextResult, setImageToTextResult] = useState(null); // New state for multimodal results
+            const chatEndRef = useRef(null);
+
+            const currentMode = apiKey ? 'Official' : 'Trial';
+
+
+            useEffect(() => {
+                const storedKey = localStorage.getItem('gemini_api_key');
+                if (storedKey) setApiKey(storedKey);
+            }, []);
+
+            const handleGenerate = async () => {
+                setIsGenerating(true);
+                setGeneratedText(null);
+                setRewriteResult(null); 
+                setQaResult(null);
+                setImageToTextResult(null); // Clear multimodal state
+                setChatHistory([{ role: 'ai', content: `我已經閱讀了關於「${selectedScenario}」的新文本。你可以問我關於這段文字的單字、語法或文化問題！` }]);
+                
+                if (currentMode === 'Trial') {
+                    await new Promise(r => setTimeout(r, 1000));
+                    setGeneratedText(generateMockContent(selectedTheme.name, selectedScenario, selectedLevel, selectedMode.name));
+                } else {
+                    const prompt = generatePrompt(selectedTheme.name, selectedScenario, selectedLevel, selectedMode.name);
+                    try {
+                        const result = await callGeminiAPI(prompt, apiKey);
+                        if (result) {
+                            setGeneratedText({ ...result, stats: { ...result.stats, time: "2.1" } });
+                        } else {
+                            throw new Error("Fallback");
+                        }
+                    } catch (e) {
+                        setGeneratedText(generateMockContent(selectedTheme.name, selectedScenario, selectedLevel, selectedMode.name));
+                    }
+                }
+                setIsGenerating(false);
+            };
+
+            const handleRewrite = async (type) => {
+                if (!generatedText) return;
+                setIsGenerating(true);
+                
+                if (currentMode === 'Trial') {
+                    await new Promise(r => setTimeout(r, 1500));
+                    setRewriteResult(generateMockRewrite(generatedText.content, type.id));
+                } else {
+                    const prompt = generateRewritePrompt(generatedText.content, type.name);
+                    try {
+                        const result = await callGeminiAPI(prompt, apiKey);
+                        if (result) setRewriteResult(result);
+                        else throw new Error("Fallback");
+                    } catch (e) {
+                        setRewriteResult(generateMockRewrite(generatedText.content, type.id));
+                    }
+                }
+                setIsGenerating(false);
+            };
+
+            const handleQA = async (type) => {
+                if (!generatedText) return;
+                setIsGenerating(true);
+                setQaResult(null);
+                setUserAnswers({});
+                setShowExplanation({});
+                
+                if (currentMode === 'Trial') {
+                    await new Promise(r => setTimeout(r, 1200));
+                    setQaResult({ type: type.id, ...generateMockQA(type.id) });
+                } else {
+                    const prompt = generateQAPrompt(generatedText.content, type.name);
+                    try {
+                        const result = await callGeminiAPI(prompt, apiKey);
+                        if (result) setQaResult({ type: type.id, ...result });
+                        else throw new Error("Fallback");
+                    } catch (e) {
+                        setQaResult({ type: type.id, ...generateMockQA(type.id) });
+                    }
+                }
+                setIsGenerating(false);
+            };
+
+            const handleTutorSend = async () => {
+                if (!tutorInput.trim()) return;
+                const userMsg = { role: 'user', content: tutorInput };
+                setChatHistory(prev => [...prev, userMsg]);
+                setTutorInput("");
+                setIsGenerating(true);
+                const context = generatedText ? generatedText.content : "目前沒有生成特定的文本，請回答一般性的華語學習問題。";
+                const prompt = generateTutorPrompt(context, userMsg.content);
+                
+                if (currentMode === 'Trial') {
+                    await new Promise(r => setTimeout(r, 800));
+                    setChatHistory(prev => [...prev, { role: 'ai', content: generateMockTutorResponse(userMsg.content) }]);
+                } else {
+                    try {
+                        const result = await callGeminiChatAPI(prompt, apiKey);
+                        if (result) {
+                            setChatHistory(prev => [...prev, { role: 'ai', content: result }]);
+                        } else {
+                            throw new Error("Fallback");
+                        }
+                    } catch (e) {
+                        setChatHistory(prev => [...prev, { role: 'ai', content: generateMockTutorResponse(userMsg.content) }]);
+                    }
+                }
+                setIsGenerating(false);
+            };
+            
+            const handleImageToText = async (scenario) => {
+                setIsGenerating(true);
+                setGeneratedText(null);
+                setRewriteResult(null); 
+                setQaResult(null);
+                setImageToTextResult(null);
+                
+                // Clear the main text, but keep chat for context
+                setChatHistory([{ role: 'ai', content: `您已選擇圖片情境「${scenario.label}」，我可以根據這個情境為您分析和輔導！` }]);
+
+                if (currentMode === 'Trial') {
+                    await new Promise(r => setTimeout(r, 1500));
+                    const mockResult = generateMockImageToText(scenario.label);
+                    // Update main content state with this new content for other modules to use (Rewrite/QA/Tutor)
+                    setGeneratedText({ content: mockResult.lesson, stats: { vocabLevel: mockResult.vocabLevel, reasoning: mockResult.reasoning } });
+                    setImageToTextResult(mockResult);
+                } else {
+                    // In a real app, this would involve sending the image BASE64/URL and the prompt to Gemini
+                    const prompt = `分析這張圖片 (情境: ${scenario.label})，並針對華語學習者生成一段實用對話和五個關鍵詞彙。輸出JSON格式: {title: "${scenario.label}分析", lesson: "...", keywords: ["..."], vocabLevel: "..."}`;
+                    try {
+                        const result = await callGeminiChatAPI(prompt, apiKey); // Use chat API for text output
+                        // Note: Real API would return string JSON, need robust parsing
+                        const parsedResult = JSON.parse(result); 
+                        setGeneratedText({ content: parsedResult.lesson, stats: { vocabLevel: parsedResult.vocabLevel, reasoning: '根據視覺輸入生成' } });
+                        setImageToTextResult(parsedResult);
+                    } catch (e) {
+                         const mockResult = generateMockImageToText(scenario.label);
+                         setGeneratedText({ content: mockResult.lesson, stats: { vocabLevel: mockResult.vocabLevel, reasoning: mockResult.reasoning } });
+                         setImageToTextResult(mockResult);
+                    }
+                }
+                setIsGenerating(false);
+            };
+
+
+            const handleQuickQuestion = (question) => setTutorInput(question);
+            const handleAnswerClick = (qIndex, optIndex) => {
+                setUserAnswers(prev => ({...prev, [qIndex]: optIndex}));
+                setShowExplanation(prev => ({...prev, [qIndex]: true}));
+            };
+
+            useEffect(() => {
+                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [chatHistory]);
+
+            return (
+                <div className="min-h-screen bg-gray-100 flex flex-col font-sans text-slate-800">
+                    <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} apiKey={apiKey} setApiKey={setApiKey} currentMode={currentMode}/>
+                    
+                    <nav className="bg-white shadow-md sticky top-0 z-50 h-16 flex items-center justify-between px-4 md:px-8">
+                        <div className="flex items-center font-bold text-xl text-[#006699] cursor-pointer" onClick={() => setCurrentPage("home")}>
+                            <div className="w-8 h-8 bg-[#FFB347] rounded mr-2 flex items-center justify-center text-white">AI</div>華語AI百寶箱
+{/* 回首頁按鈕 (React寫法) */}
+<a href="index.html" className="flex items-center gap-2 mr-4 text-slate-600 hover:text-orange-500 font-bold no-underline">
+    <span className="text-xl">🏠</span>
+    <span className="hidden md:inline">回首頁</span>
+</a>
+
+                        </div>
+                        <div className="hidden md:flex space-x-1">
+                            {[{id:'generate',icon:<FileText size={18}/>,t:'文本生成'},{id:'rewrite',icon:<Repeat size={18}/>,t:'文本改寫'},{id:'qa',icon:<MessageCircle size={18}/>,t:'問答延伸'},{id:'tutor',icon:<Zap size={18}/>,t:'AI 助教'},{id:'multimodal',icon:<Headphones size={18}/>,t:'多模態'}].map(item => (
+                                <button key={item.id} onClick={() => {setCurrentPage("workspace"); setActiveModule(item.id)}} className={`flex items-center px-4 py-2 rounded-lg transition ${activeModule === item.id && currentPage === 'workspace' ? 'bg-orange-50 text-orange-600 font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{item.icon} <span className="ml-2">{item.t}</span></button>
+                            ))}
+                        </div>
+                        <div className="flex items-center space-x-3">
+                            <button onClick={() => setIsSettingsOpen(true)} className="flex items-center text-gray-600 hover:text-[#006699] transition" title="設定 API Key">
+                                <Settings size={20} className={currentMode === 'Trial' ? "text-yellow-500" : "text-green-500"}/>
+                                <span className={`text-xs font-bold ml-2 hidden md:inline ${currentMode === 'Trial' ? 'text-yellow-600' : 'text-green-600'}`}>
+                                    {currentMode === 'Trial' ? '體驗版' : '正式版'}
+                                </span>
+                            </button>
+                            <div className="md:hidden"><Menu onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}/></div>
+                        </div>
+                    </nav>
+
+                    {/* Mode Banner Display */}
+                    {currentPage !== 'home' && <ModeIndicatorBanner currentMode={currentMode} setActiveModule={setActiveModule} />}
+                    
+                    {currentPage === 'home' ? (
+                        <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 to-blue-50 p-8 text-center">
+                            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 mb-6">讓華語教學更<span className="text-[#006699]">智慧</span></h1>
+                            <button onClick={() => setCurrentPage("workspace")} className="px-8 py-4 bg-[#FFB347] text-white font-bold rounded-full shadow-xl hover:scale-105 transition flex items-center"><Sparkles className="mr-2"/> 開始體驗</button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-1 h-[calc(100vh-64px)] overflow-hidden">
+                            <div className="w-64 bg-white border-r hidden md:block overflow-y-auto">
+                                <div className="p-4 bg-gray-50 border-b font-bold text-gray-700 flex items-center"><BookOpen size={18} className="mr-2"/> 主題情境</div>
+                                <div className="p-2">{THEMES.map(theme => (
+                                    <div key={theme.id} className="mb-1"><button onClick={() => setSelectedTheme(theme)} className={`w-full text-left px-3 py-2 rounded flex items-center ${selectedTheme.id === theme.id ? 'bg-blue-50 text-[#006699]' : 'hover:bg-gray-100'}`}><span className="mr-2">{theme.icon}</span> {theme.name}</button>
+                                    {selectedTheme.id === theme.id && <div className="ml-8 mt-1 border-l-2 pl-2 space-y-1">{theme.scenarios.map(s => <button key={s} onClick={() => setSelectedScenario(s)} className={`w-full text-left text-sm px-2 py-1 rounded ${selectedScenario === s ? 'text-orange-600 font-medium bg-orange-50' : 'text-gray-500 hover:text-gray-800'}`}>{s}</button>)}</div>}</div>
+                                ))}</div>
+                            </div>
+                            <div className="flex-1 bg-slate-50 p-4 md:p-8 overflow-y-auto">
+                                <div className="max-w-4xl mx-auto h-full flex flex-col">
+                                    {activeModule === 'generate' && <GenerateModule levels={LEVELS} modes={MODES} selectedLevel={selectedLevel} setSelectedLevel={setSelectedLevel} selectedMode={selectedMode} setSelectedMode={setSelectedMode} handleGenerate={handleGenerate} isGenerating={isGenerating} generatedText={generatedText} setActiveModule={setActiveModule} />}
+                                    {activeModule === 'rewrite' && <RewriteModule generatedText={generatedText} isGenerating={isGenerating} handleRewrite={handleRewrite} rewriteResult={rewriteResult} rewriteOptions={REWRITE_OPTIONS} />}
+                                    {activeModule === 'qa' && <QAModule generatedText={generatedText} isGenerating={isGenerating} qaTypes={QA_TYPES} handleQA={handleQA} qaResult={qaResult} userAnswers={userAnswers} handleAnswerClick={handleAnswerClick} showExplanation={showExplanation} />}
+                                    {activeModule === 'tutor' && <TutorModule chatHistory={chatHistory} tutorInput={tutorInput} setTutorInput={setTutorInput} handleTutorSend={handleTutorSend} isGenerating={isGenerating} chatEndRef={chatEndRef} generatedText={generatedText} setActiveModule={setActiveModule} handleQuickQuestion={handleQuickQuestion} />}
+                                    {activeModule === 'multimodal' && <MultimodalModule generatedText={generatedText} isGenerating={isGenerating} isPlaying={isPlaying} setIsPlaying={setIsPlaying} handleImageToText={handleImageToText} imageToTextResult={imageToTextResult} scenarioImages={SCENARIO_IMAGES} />}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
