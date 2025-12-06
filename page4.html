@@ -207,7 +207,7 @@
     </div>
 
     <!-- 2. 頁面內容容器 (SPA Views) -->
-    <main id="app-container" class="flex-grow">
+    <main id="app-container" class="flex-grow pb-24">
         
         <!-- View 1: 首頁 (Home) -->
         <div id="view-home" class="fade-in">
@@ -706,6 +706,28 @@
     </main>
 
     <!-- Footer -->
+<div class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around items-center p-2 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+    <button onclick="navigateTo('generator')" class="flex flex-col items-center justify-center w-full py-1 text-slate-500 hover:text-brand-orange">
+        <i class="fa-solid fa-pen-nib text-lg"></i>
+        <span class="text-[10px] mt-1 font-bold">生成</span>
+    </button>
+    <button onclick="navigateTo('rewrite')" class="flex flex-col items-center justify-center w-full py-1 text-slate-500 hover:text-brand-orange">
+        <i class="fa-solid fa-arrows-rotate text-lg"></i>
+        <span class="text-[10px] mt-1 font-bold">改寫</span>
+    </button>
+    <button onclick="navigateTo('qa')" class="flex flex-col items-center justify-center w-full py-1 text-slate-500 hover:text-brand-orange">
+        <i class="fa-solid fa-circle-question text-lg"></i>
+        <span class="text-[10px] mt-1 font-bold">問答</span>
+    </button>
+    <button onclick="navigateTo('assistant')" class="flex flex-col items-center justify-center w-full py-1 text-slate-500 hover:text-brand-orange">
+        <i class="fa-solid fa-robot text-lg"></i>
+        <span class="text-[10px] mt-1 font-bold">助教</span>
+    </button>
+    <button onclick="navigateTo('multimodal')" class="flex flex-col items-center justify-center w-full py-1 text-slate-500 hover:text-brand-orange">
+        <i class="fa-solid fa-shapes text-lg"></i>
+        <span class="text-[10px] mt-1 font-bold">多模態</span>
+    </button>
+</div>
     <footer class="bg-slate-800 text-slate-400 py-8 border-t border-slate-700 mt-auto">
         <div class="max-w-7xl mx-auto px-4 text-center">
             <p class="mb-4">© 2025 華語 AI 百寶箱 Chinese AI Toolbox | 雙模式引擎</p>

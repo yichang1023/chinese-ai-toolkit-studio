@@ -626,7 +626,7 @@
                     </header>
 
                     {/* Main Workspace */}
-                    <main className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-0">
+                    <main className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-0 pb-24">
                         {/* Sidebar */}
                         <div className="lg:col-span-3 flex flex-col gap-4 animate-fade-in">
                             {activeTab === 'multimodal' ? (
@@ -787,6 +787,30 @@
 
                         </div>
                     </main>
+
+
+{/* === 手機版底部導覽列 (Page 3) === */}
+<div className="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around items-center p-2 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+    {[
+        { id: 'generate', label: '生成', icon: PenTool },
+        { id: 'rewrite', label: '改寫', icon: RefreshCw },
+        { id: 'qa', label: '問答', icon: MessageCircle },
+        { id: 'assistant', label: '助教', icon: Bot },
+        { id: 'multimodal', label: '多模態', icon: Headphones }
+    ].map((item) => (
+        <button 
+            key={item.id} 
+            onClick={() => setActiveTab(item.id)} 
+            className={`flex flex-col items-center justify-center w-full py-1 ${activeTab === item.id ? 'text-[#006699]' : 'text-gray-400'}`}
+        >
+            <item.icon size={20} />
+            <span className="text-[10px] mt-1 font-medium">{item.label}</span>
+        </button>
+    ))}
+</div>
+
+
+
                 </div>
             );
         }
